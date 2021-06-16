@@ -7,62 +7,54 @@
 %   floating point (double); 6= Complex: Read-Imaginary pair of signle-precision
 %   floating-point (complex)
 
-%   3) headerOffset - 
+%   3) headerOffset - The number of bytes that make up the header of a
+%   given file. Often the header offset is 0, and the header information is
+%   simply stored in a seperate file altogether. 
 
-%   4) interLeave - 
+%   4) interLeave - This tells matlab how the band data is interleaved, or
+%   stored, in the data cube. The options are 1) 'bsq' - or band
+%   sequential, which is the simplest format. 2) 'bip' - or band
+%   interleaved by pixel. 3) 'bil' - or band interleaved by line. 
 
 %   5) byteOrder - Order of bytes in integer, long integer, 64-bit integer,
 %   unsigned 64-bit integer, floating point, double precision and complex.
-%   0 = 'native' (Host); 1 = 'ieee-be' (Netowrk
+%   0 = 'native' (Host); 1 = 'ieee-be' (Netowrk)
+
+
+% The ouput being extracted is calibrated radiance, which has units of
+% micro-watts per centimeter squared per nanometer per steradian
+
+
 
 % By Andrew J. Buggee
-%% --- READING IN ENVI FILES ---
+%% --- DEFINE FOLDER AND FILE NAMES ---
 
-folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/AVIRIS/',...
-            'AVIRIS_Classic_data/8_20_2018/f180820t01p00r09rdn_e/'];
-fileName = 'f150131t01p00r09rdn_b_sc01_ort_img';
+function [X,info] = readAVIRIS_classic(folderName,fileName)
+        
+% folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/AVIRIS/',...
+%             'AVIRIS-Classic-data/8_20_2018/f180820t01p00r09rdn_e/'];
+% 
+% fileName = 'f180820t01p00r09rdn_e_sc01_ort_img';
 
-fileName2 = '/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/AVIRIS/AVIRIS_Classic _data/8_20_2018/f180820t01p00r09rdn_e';
+%% --- READ THE HEADER FILE ---
+
+info = enviinfo([folderName,fileName,'.hdr']);
 
 
-headerFileName = [folderName,fileName,'.hdr'];
+dataDim = [info.Height,info.Width,info.Bands]; % lines, samples, bands. taken from _ort_img.hdr file
+dataType = info.DataType; % Taken from _obs.hdr file
+headerOffset = info.HeaderOffset; % header offset. Taken from _obs.hdr file
+interLeave = info.Interleave; % Taken from _obs.hdr file
+byteOrder = info.ByteOrder; % Taken from _obs.hdr file
 
-headerFileName2 = [fileName2,fileName,'.hdr'];
 
 
-% dataDim = [8730,983,224]; % lines, samples, bands. taken from _obs.hdr file
-dataDim = [1994,1069,224]; % lines, samples, bands. taken from _ort_img.hdr file
-dataType = 'int16'; % Taken from _obs.hdr file
-headerOffset = 0; % header offset. Taken from _obs.hdr file
-interLeave = 'bip'; % Taken from _obs.hdr file
-byteOrder = 'ieee-be'; % Taken from _obs.hdr file
+X = multibandread([folderName,fileName],dataDim,dataType,headerOffset,interLeave,byteOrder); % mu-W/cm^2/nm/sr
 
-X = multibandread([folderName,fileName],dataDim,dataType,headerOffset,interLeave,byteOrder);
 
-%%
+wavelength = info.Wavelength; % wavelength measured in nm
+%%  
 
-% Read the AVIRIS image (specify your image file name here)
-hCube = hypercube(headerFileName2);
 
-% Compute RGB, CIR, and falsecolored image
-rgbImg = colorize(hCube, 'method', 'rgb', 'ContrastStretching', true);
-cirImg = colorize(hCube, 'method', 'cir', 'ContrastStretching', true);
-fcImg = colorize(hCube, 'method', 'falsecolored', 'ContrastStretching', true);
+end
 
-% Visualize results
-figure
-tiledlayout(1, 3)
-nexttile
-imagesc(rgbImg)
-axis image off
-title('RGB image')
-
-nexttile
-imagesc(cirImg)
-axis image off
-title('CIR image')
-
-nexttile
-imagesc(fcImg)
-axis image off
-title('False-colored image')
