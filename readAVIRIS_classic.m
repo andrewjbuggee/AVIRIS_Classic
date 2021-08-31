@@ -1,6 +1,5 @@
 %% ----- READ IN AVIRIS DATA -----
 
-% Does this work
 
 %   2) dataType - 1= Byte: 8-bit unsigned integer (unit8); 2= Integer: 16-bit signed integer (int16);
 %   3= Long: 32-bit signed integer (int32); 4=Floating-Point: 32-bit
