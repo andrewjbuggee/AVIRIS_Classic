@@ -29,7 +29,7 @@
 % By Andrew J. Buggee
 %% --- DEFINE FOLDER AND FILE NAMES ---
 
-function [X,info] = readAVIRIS_classic(folderName,fileName)
+function [aviris] = readAVIRIS_classic(folderName,fileName)
         
 % folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/AVIRIS/',...
 %             'AVIRIS-Classic-data/8_20_2018/f180820t01p00r09rdn_e/'];
@@ -38,8 +38,13 @@ function [X,info] = readAVIRIS_classic(folderName,fileName)
 
 %% --- READ THE HEADER FILE ---
 
-info = enviinfo([folderName,fileName,'.hdr']);
+radiance_hdr_file = [folderName,fileName,'_sc01_ort_img.hdr'];
+radiance_file = [folderName,fileName,'_sc01_ort_img'];
 
+gain_file = [folderName,fileName,'.gain'];
+
+info = enviinfo(radiance_hdr_file);
+aviris.gain = importdata(gain_file); % import gain values that convert int16 to radiance
 
 dataDim = [info.Height,info.Width,info.Bands]; % lines, samples, bands. taken from _ort_img.hdr file
 dataType = info.DataType; % Taken from _obs.hdr file
@@ -49,11 +54,18 @@ byteOrder = info.ByteOrder; % Taken from _obs.hdr file
 
 
 
-X = multibandread([folderName,fileName],dataDim,dataType,headerOffset,interLeave,byteOrder); % mu-W/cm^2/nm/sr
+aviris.radiance = multibandread(radiance_file,dataDim,dataType,headerOffset,interLeave,byteOrder); % mu-W/cm^2/nm/sr
 
+% convert radiance from int16 to micro-watts/cm^2/nm/sr. Accroding to the
+% readme file: "When each spectrum is divided by the factors in this file 
+% the 16-bit integers are converted to radiance in units of
+% (micro-watts/cm^2/nm/sr)"
 
-wavelength = info.Wavelength; % wavelength measured in nm
-%%  
+gain_vals = reshape(aviris.gain(:,1),1,1,[]);
+aviris.radiance = aviris.radiance./repmat(gain_vals,size(aviris.radiance,1),size(aviris.radiance,2),1);
+
+aviris.wavelengths = info.Wavelength; % wavelength measured in nm
+
 
 
 end
