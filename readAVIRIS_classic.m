@@ -31,10 +31,9 @@
 
 function [aviris] = readAVIRIS_classic(folderName,fileName)
         
-% folderName = ['/Users/andrewbuggee/Documents/CU-Boulder-ATOC/Hyperspectral-Cloud-Droplet-Retrieval-Research/AVIRIS/',...
-%             'AVIRIS-Classic-data/8_20_2018/f180820t01p00r09rdn_e/'];
-% 
-% fileName = 'f180820t01p00r09rdn_e_sc01_ort_img';
+% folderName = ['/Users/andrewbuggee/Documents/MATLAB/CU Boulder/Hyperspectral_Cloud_Retrievals/AVIRIS/AVIRIS-Classic-data/8_20_2018/orthorectified_radiance_data/'];
+
+% fileName = 'f180820t01p00r09rdn_e';
 
 %% --- READ THE HEADER FILE ---
 
@@ -62,7 +61,7 @@ aviris.radiance = multibandread(radiance_file,dataDim,dataType,headerOffset,inte
 % (micro-watts/cm^2/nm/sr)"
 
 gain_vals = reshape(aviris.gain(:,1),1,1,[]);
-aviris.radiance = aviris.radiance./repmat(gain_vals,size(aviris.radiance,1),size(aviris.radiance,2),1);
+aviris.radiance = aviris.radiance./repmat(gain_vals,size(aviris.radiance,1),size(aviris.radiance,2),1);  % micro-watts/cm^2/nm/sr
 
 aviris.wavelengths = info.Wavelength; % wavelength measured in nm
 
