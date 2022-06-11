@@ -125,7 +125,7 @@ else
     random_set = randi([1, length(linearIndex_selectedPixels)], inputs.pixels.num_2calculate,1);
     
     % store the linear index, the rows and the columns
-    pixels2use.res1km.linerIndex = linearIndex_selectedPixels(random_set);
+    pixels2use.res1km.linearIndex = linearIndex_selectedPixels(random_set);
     [pixels2use.res1km.row, pixels2use.res1km.col] = ind2sub(size(modis.geo.lat), linearIndex_selectedPixels(random_set));
 
     
