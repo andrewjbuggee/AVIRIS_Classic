@@ -1,16 +1,19 @@
 function pixels2use = find_MODIS_AVIRIS_overlapping_pixels(modis, inputs, aviris)
 
+% Define folder to save calculations
+folderName2Save = inputs.savedCalculations_folderName; % where to save the indices
+
 % NOT USING SUITABLE PIXELS FOR NOW
 
 % ----------------------------------------------------------------
 % ------- FIND PIXELS THAT MEET REQUIREMENTS LISTED BELOW --------
 % ----------------------------------------------------------------
-
-liquidWater_mask = modis.cloud.phase == 2; % 2 is the value designated for liquid water
+ % 2 is the value designated for liquid water
+liquidWater_mask = modis.cloud.phase == 2;
 
 % create tau mask based on threshold
 tauThreshold = inputs.pixels.tauThreshold;
-%tauThreshold = 5;
+%tauThreshold = 0;
 
 % finds clouds with an optical thickness of a certain value and an
 % uncertainty less than the definition below
@@ -22,7 +25,7 @@ tau_mask = modis.cloud.optThickness17 >= tauThreshold & modis.cloud.optThickness
 
 % Find pixels with am effective radius of at least 0 and an uncertainty
 % less than the amount defined below
-uncertaintyLimit =10;
+uncertaintyLimit = 10;
 re_mask = modis.cloud.effRadius17>=0 & modis.cloud.optThickness_uncert_17<uncertaintyLimit;        % find values greater than 0
 
 % find where there is overlap
@@ -90,7 +93,7 @@ for ii = 1:(N-1)
     % the MODIS longitude barriers
     
     index_lat = suitablePixel_lat>=lat_vector(ii) & suitablePixel_lat<lat_vector(ii+1);
-        
+    
     % Now find the pixels that are within the longitude boundaries
     
     index_long = suitablePixel_long>=long_vectorLeft(ii) & suitablePixel_long<=long_vectorRight(ii);
@@ -113,11 +116,11 @@ end
 % inputs
 
 if inputs.pixels.num_2calculate>=length(linearIndex_selectedPixels)
-
+    
     % store the linear index, the rows and the columns
-    pixels2use.linerIndex = linearIndex_selectedPixels;
-    [pixels2use.row, pixels2use.col] = ind2sub(size(modis.geo.lat), linearIndex_selectedPixels);
-
+    pixels2use.res1km.linearIndex = linearIndex_selectedPixels;
+    [pixels2use.res1km.row, pixels2use.res1km.col] = ind2sub(size(modis.geo.lat), linearIndex_selectedPixels);
+    
 else
     
     % if there are more pixels found than is desired for calculation, take
@@ -127,8 +130,40 @@ else
     % store the linear index, the rows and the columns
     pixels2use.res1km.linearIndex = linearIndex_selectedPixels(random_set);
     [pixels2use.res1km.row, pixels2use.res1km.col] = ind2sub(size(modis.geo.lat), linearIndex_selectedPixels(random_set));
-
     
+    
+    
+    
+    
+    
+end
+
+
+
+% --- Load the geometry settings for each pixel ---
+
+pixel_rows = pixels2use.res1km.row;
+pixel_cols = pixels2use.res1km.col;
+
+for ii = 1:length(pixel_rows)
+    
+    pixels2use.res1km.geometry.sza(ii) = modis.solar.zenith(pixel_rows(ii),pixel_cols(ii));
+    pixels2use.res1km.geometry.saz(ii) = modis.solar.azimuth(pixel_rows(ii),pixel_cols(ii));
+    
+    % we need the cosine of the zenith viewing angle
+    pixels2use.res1km.geometry.umu(ii) = round(cosd(double(modis.sensor.zenith(pixel_rows(ii),pixel_cols(ii)))),3); % values are in degrees
+    pixels2use.res1km.geometry.phi(ii) = modis.sensor.azimuth(pixel_rows(ii),pixel_cols(ii));
+    
+end
+
+% Save the pixels to a file, and save the geometry in the pixels2use
+% structure
+
+save([folderName2Save,inputs.saveCalculations_fileName],'pixels2use','inputs')
+
+
+
 
 end
+
 
